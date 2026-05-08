@@ -13,8 +13,8 @@ There are many ways to support us; in exchange, you'll get this material in a pr
 - 📚 [Google Play Books, in PDF format, without answers marked](https://play.google.com/store/books/details?id=-w8UEQAAQBAJ),
 - 🛍️ [Etsy, in PDF format, with answers marked](https://ditectrev.etsy.com/listing/1476792526),
 - 🛍️ [Etsy, in PDF format, without answers marked](https://ditectrev.etsy.com/listing/1499840969),
-- 🛒 [eBay, in PDF format, with answers marked](https://www.ebay.com/itm/405489377463?mkcid=16&mkevt=1&mkrid=711-127632-2357-0&ssspo=_ptbuk3gqdw&sssrc=2047675&ssuid=_ptbuk3gqdw&widget_ver=artemis&media=COPY),
-- 🛒 [eBay, in PDF format, without answers marked](https://www.ebay.com/itm/405489377523?mkcid=16&mkevt=1&mkrid=711-127632-2357-0&ssspo=_ptbuk3gqdw&sssrc=2047675&ssuid=_ptbuk3gqdw&widget_ver=artemis&media=COPY),
+- 🛒 [eBay, in PDF format, with answers marked](https://ebay.us/m/9Eiuc8),
+- 🛒 [eBay, in PDF format, without answers marked](https://ebay.us/m/uLFWbq),
 - 🔄 [Patreon subscription allows you to get access to all of the materials in EPUB and PDF formats. You can also buy separate items on Patreon, but the subscription technically allows us to include all updates for EPUB and PDF formats. Hence, you get EPUB and PDF updates when you subscribe to Patreon](https://patreon.com/Ditectrev?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink).
 
 💰 If you work for a company, you could probably easily claim this expense while preparing for your exam. For us, it's about being in the game or not.
@@ -25,6 +25,7 @@ There are many ways to support us; in exchange, you'll get this material in a pr
 
 It's great to learn these questions as your exam preparation, and, yes, you should pass just based on that. However, we highly recommend more interactive learning if you want to become an expert. Currently, we're recommending those courses:
 
+- 🎬 [Coursera: video-based, official course by Google Cloud](https://imp.i384100.net/MKbXJ3).
 - 📖 [Educative: text-based, video-free course, including set up out-of-the-box for you Cloud Labs to practice hands-on without the need to set up an environment (and payments). The link includes the highest available discount Educative offers](https://www.educative.io/courses/google-cloud-assoc-certification?aff=VALz).
 
 Yes, we have a little commission from that link. Therefore, by using that link, you're supporting us.
