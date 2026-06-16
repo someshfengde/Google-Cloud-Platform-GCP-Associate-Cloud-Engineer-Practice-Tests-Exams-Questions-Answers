@@ -58,6 +58,7 @@ async function init() {
     if (!state.questions.length) throw new Error('No checkbox-based questions found in README.md');
     els.status.hidden = true;
     render();
+    await loadProgressFromGitHub();
   } catch (error) {
     els.status.textContent = `Could not load questions: ${error.message}. Run this through GitHub Pages or a local web server.`;
   }
