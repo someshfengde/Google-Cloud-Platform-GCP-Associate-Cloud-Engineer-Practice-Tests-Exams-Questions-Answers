@@ -96,7 +96,7 @@ This repository now includes a lightweight static quiz app for GitHub Pages. It 
 - Open `index.html` locally through a simple web server, or use the GitHub Pages deployment for this repository.
 - Live app: https://someshfengde.github.io/Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers/
 - No build step or backend is required; the app uses standard HTML, CSS, and JavaScript.
-- GitHub is the persistent storage: use Load to read `progress/<profile>.json`, and Save to send your latest progress to the cloud API, which commits it back to GitHub.
+- GitHub is the persistent storage: use Load to read `progress/<profile>.json`; new changes autosave to GitHub through the cloud API once per minute.
 - The browser never receives a GitHub token. The optional Cloudflare Worker stores the GitHub token as a server-side secret named `GITHUB_TOKEN`.
 
 ## 🙋‍♀️ & 🙋‍♂️ Contribution

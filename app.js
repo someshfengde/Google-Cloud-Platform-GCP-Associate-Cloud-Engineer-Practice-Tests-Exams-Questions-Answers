@@ -1,5 +1,6 @@
 const APP_VERSION = '2.0.0';
 const PROGRESS_API_URL = 'https://gcp-ace-progress.someshfengde.workers.dev';
+const AUTOSAVE_INTERVAL_MS = 60 * 1000;
 
 const DEFAULT_REPO = {
   owner: 'someshfengde',
@@ -15,6 +16,9 @@ const state = {
   search: '',
   shuffled: false,
   shuffledIds: [],
+  hasUnsavedChanges: false,
+  saveInFlight: false,
+  lastSavedAt: null,
 };
 
 const els = {
@@ -89,9 +93,9 @@ function bindControls() {
   els.reset.addEventListener('click', () => {
     if (!confirm('Clear the progress currently loaded on this page? Save afterward if you want GitHub to store the reset.')) return;
     state.progress = createEmptyProgress();
-    touchProgress();
+    markProgressChanged();
     render();
-    setSyncStatus('Progress cleared on this page. Save to store the reset in GitHub.');
+    setSyncStatus('Progress cleared on this page. Autosave will store the reset in GitHub.');
   });
 }
 
@@ -102,7 +106,10 @@ function bindSyncControls() {
   });
 
   els.load.addEventListener('click', loadProgressFromGitHub);
-  els.save.addEventListener('click', saveProgressToGitHub);
+  els.save.addEventListener('click', () => saveProgressToGitHub({ automatic: false }));
+  window.setInterval(() => {
+    saveProgressToGitHub({ automatic: true });
+  }, AUTOSAVE_INTERVAL_MS);
 }
 
 function hydrateSyncForm() {
@@ -208,7 +215,7 @@ function renderQuestion(question) {
   flagButton.addEventListener('click', () => {
     state.progress.flags[question.id] = !state.progress.flags[question.id];
     if (!state.progress.flags[question.id]) delete state.progress.flags[question.id];
-    touchProgress();
+    markProgressChanged();
     render();
   });
 
@@ -256,10 +263,10 @@ function chooseAnswer(question, index) {
     lastAnsweredAt: now,
   };
 
-  touchProgress();
+  markProgressChanged();
   render();
   scrollToQuestion(question.id, false);
-  setSyncStatus('Unsaved changes. Save to store them in GitHub.');
+  setSyncStatus('Unsaved changes. Autosave runs every minute.');
 }
 
 function getVisibleQuestions() {
@@ -327,6 +334,11 @@ function touchProgress() {
     appVersion: APP_VERSION,
     updatedAt: new Date().toISOString(),
   };
+}
+
+function markProgressChanged() {
+  touchProgress();
+  state.hasUnsavedChanges = true;
 }
 
 function createEmptyProgress() {
@@ -436,6 +448,7 @@ async function loadProgressFromGitHub() {
 
     state.progress = mergeProgress(state.progress, remote.progress);
     touchProgress();
+    state.hasUnsavedChanges = false;
     render();
     setSyncStatus(`Loaded and merged ${config.path}.`, 'synced');
   } catch (error) {
@@ -445,23 +458,38 @@ async function loadProgressFromGitHub() {
   }
 }
 
-async function saveProgressToGitHub() {
+async function saveProgressToGitHub({ automatic = false } = {}) {
+  if (state.saveInFlight) return;
+  if (!state.hasUnsavedChanges) {
+    if (!automatic) setSyncStatus('No new changes to save.', 'synced');
+    return;
+  }
+
   const config = getSyncConfig();
   if (!validateSyncConfig(config)) return;
 
-  setSyncStatus('Saving progress to cloud...');
+  const saveStartedAt = state.progress.meta.updatedAt;
+  setSyncStatus(automatic ? 'Autosaving progress to cloud...' : 'Saving progress to cloud...');
+  state.saveInFlight = true;
   setSyncBusy(true);
 
   try {
     touchProgress();
     const payload = createProgressPayload(config, state.progress);
     const saved = await putCloudProgressFile(config, payload);
-    if (saved?.progress) state.progress = normalizeProgress(saved.progress);
+    const noNewerChanges = state.progress.meta.updatedAt === payload.progress.meta.updatedAt
+      || state.progress.meta.updatedAt === saveStartedAt;
+    if (saved?.progress && noNewerChanges) state.progress = normalizeProgress(saved.progress);
+    if (noNewerChanges) {
+      state.hasUnsavedChanges = false;
+      state.lastSavedAt = new Date().toISOString();
+    }
     render();
-    setSyncStatus(`Saved ${config.path} to GitHub.`, 'synced');
+    setSyncStatus(noNewerChanges ? `Saved ${config.path} to GitHub.` : 'Saved older changes. New changes will autosave on the next tick.', noNewerChanges ? 'synced' : 'pending');
   } catch (error) {
     setSyncStatus(error.message, 'error');
   } finally {
+    state.saveInFlight = false;
     setSyncBusy(false);
   }
 }
@@ -512,14 +540,15 @@ async function parseJsonResponse(response) {
 }
 
 function createProgressPayload(config, progress) {
+  const normalizedProgress = normalizeProgress(progress);
   return {
     schema: 'gcp-ace-practice-progress-v1',
     profile: config.profile,
     repository: `${config.owner}/${config.repo}`,
     branch: config.branch,
     exportedAt: new Date().toISOString(),
-    totals: calculateTotals(progress),
-    progress,
+    totals: calculateTotals(normalizedProgress),
+    progress: normalizedProgress,
   };
 }
 
