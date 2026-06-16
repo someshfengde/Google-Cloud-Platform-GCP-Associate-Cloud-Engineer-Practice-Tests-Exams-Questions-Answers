@@ -1,0 +1,9 @@
+name = "gcp-ace-progress"
+main = "worker.js"
+compatibility_date = "2026-06-16"
+
+[vars]
+GITHUB_OWNER = "someshfengde"
+GITHUB_REPO = "Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers"
+GITHUB_BRANCH = "main"
+ALLOWED_ORIGIN = "https://someshfengde.github.io,http://127.0.0.1:4173,http://localhost:4173"

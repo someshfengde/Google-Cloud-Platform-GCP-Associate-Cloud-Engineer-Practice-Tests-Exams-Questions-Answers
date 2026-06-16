@@ -52,7 +52,7 @@
         <section class="sync-panel" aria-label="Progress sync">
           <div class="sync-heading">
             <div>
-              <h2>GitHub Progress</h2>
+              <h2>Cloud Progress</h2>
               <p id="syncPathPreview" class="sync-path">progress/default.json</p>
             </div>
             <span id="syncBadge" class="sync-badge">Unsaved</span>
@@ -62,16 +62,12 @@
               Profile
               <input id="syncProfile" type="text" autocomplete="username" />
             </label>
-            <label class="token-field">
-              GitHub token
-              <input id="syncToken" type="password" autocomplete="off" placeholder="Contents read/write" />
-            </label>
           </div>
           <div class="sync-actions">
             <button id="loadProgress" class="button secondary-dark" type="button">Load</button>
             <button id="saveProgress" class="button" type="button">Save</button>
           </div>
-          <p id="syncStatus" class="sync-status" role="status">GitHub is the persistent storage.</p>
+          <p id="syncStatus" class="sync-status" role="status">Cloud API saves progress to GitHub.</p>
         </section>
       </section>
 

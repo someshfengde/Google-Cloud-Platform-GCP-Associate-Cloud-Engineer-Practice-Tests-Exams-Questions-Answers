@@ -1,4 +1,5 @@
 const APP_VERSION = '2.0.0';
+const PROGRESS_API_URL = 'https://gcp-ace-progress.someshfengde.workers.dev';
 
 const DEFAULT_REPO = {
   owner: 'someshfengde',
@@ -31,7 +32,6 @@ const els = {
   next: document.querySelector('#nextUnanswered'),
   reset: document.querySelector('#resetProgress'),
   syncProfile: document.querySelector('#syncProfile'),
-  syncToken: document.querySelector('#syncToken'),
   syncPathPreview: document.querySelector('#syncPathPreview'),
   syncBadge: document.querySelector('#syncBadge'),
   syncStatus: document.querySelector('#syncStatus'),
@@ -107,7 +107,6 @@ function bindSyncControls() {
 
 function hydrateSyncForm() {
   els.syncProfile.value = state.syncSettings.profile;
-  els.syncToken.value = '';
   updateSyncPathPreview();
 }
 
@@ -411,7 +410,7 @@ function getSyncConfig() {
   readSyncSettingsFromForm();
   return {
     ...state.syncSettings,
-    token: els.syncToken.value.trim(),
+    apiUrl: PROGRESS_API_URL,
     path: `progress/${sanitizeProfile(state.syncSettings.profile)}.json`,
   };
 }
@@ -423,14 +422,14 @@ function updateSyncPathPreview() {
 
 async function loadProgressFromGitHub() {
   const config = getSyncConfig();
-  if (!validateSyncConfig(config, { requireToken: false })) return;
+  if (!validateSyncConfig(config)) return;
 
-  setSyncStatus('Loading progress from GitHub...');
+  setSyncStatus('Loading progress from cloud...');
   setSyncBusy(true);
 
   try {
-    const remote = await getGitHubProgressFile(config);
-    if (!remote) {
+    const remote = await getCloudProgressFile(config);
+    if (!remote?.progress) {
       setSyncStatus(`No progress file found at ${config.path}.`, 'error');
       return;
     }
@@ -448,19 +447,16 @@ async function loadProgressFromGitHub() {
 
 async function saveProgressToGitHub() {
   const config = getSyncConfig();
-  if (!validateSyncConfig(config, { requireToken: true })) return;
+  if (!validateSyncConfig(config)) return;
 
-  setSyncStatus('Saving progress to GitHub...');
+  setSyncStatus('Saving progress to cloud...');
   setSyncBusy(true);
 
   try {
-    const existing = await getGitHubProgressFile(config);
-    const merged = existing ? mergeProgress(existing.progress, state.progress) : normalizeProgress(state.progress);
-    state.progress = merged;
     touchProgress();
-
-    const payload = createProgressPayload(config, merged);
-    await putGitHubProgressFile(config, payload, existing?.sha);
+    const payload = createProgressPayload(config, state.progress);
+    const saved = await putCloudProgressFile(config, payload);
+    if (saved?.progress) state.progress = normalizeProgress(saved.progress);
     render();
     setSyncStatus(`Saved ${config.path} to GitHub.`, 'synced');
   } catch (error) {
@@ -470,73 +466,46 @@ async function saveProgressToGitHub() {
   }
 }
 
-function validateSyncConfig(config, { requireToken }) {
-  if (!config.owner || !config.repo || !config.branch) {
-    setSyncStatus('Owner, repo, and branch are required.', 'error');
-    return false;
-  }
-  if (requireToken && !config.token) {
-    setSyncStatus('A GitHub token with Contents read/write access is required to save.', 'error');
+function validateSyncConfig(config) {
+  if (!config.apiUrl) {
+    setSyncStatus('Progress API is not configured.', 'error');
     return false;
   }
   return true;
 }
 
-async function getGitHubProgressFile(config) {
-  const url = githubContentsUrl(config);
-  const response = await fetch(`${url}?ref=${encodeURIComponent(config.branch)}`, {
-    headers: githubHeaders(config.token),
+async function getCloudProgressFile(config) {
+  const response = await fetch(progressApiUrl(config), {
+    headers: { Accept: 'application/json' },
   });
 
   if (response.status === 404) return null;
-  const data = await parseGitHubResponse(response);
-  const decoded = fromBase64(data.content || '');
-  const payload = JSON.parse(decoded);
-  return {
-    sha: data.sha,
-    progress: normalizeProgress(payload.progress || payload),
-  };
+  return parseJsonResponse(response);
 }
 
-async function putGitHubProgressFile(config, payload, sha) {
-  const body = {
-    message: `Update ${config.profile} quiz progress`,
-    branch: config.branch,
-    content: toBase64(JSON.stringify(payload, null, 2)),
-  };
-
-  if (sha) body.sha = sha;
-
-  const response = await fetch(githubContentsUrl(config), {
+async function putCloudProgressFile(config, payload) {
+  const response = await fetch(progressApiUrl(config), {
     method: 'PUT',
-    headers: githubHeaders(config.token),
-    body: JSON.stringify(body),
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
   });
 
-  await parseGitHubResponse(response);
+  return parseJsonResponse(response);
 }
 
-function githubContentsUrl(config) {
-  const path = config.path.split('/').map(encodeURIComponent).join('/');
-  return `https://api.github.com/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}/contents/${path}`;
+function progressApiUrl(config) {
+  return `${config.apiUrl.replace(/\/+$/, '')}/progress/${encodeURIComponent(sanitizeProfile(config.profile))}`;
 }
 
-function githubHeaders(token) {
-  const headers = {
-    Accept: 'application/vnd.github+json',
-    'Content-Type': 'application/json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-}
-
-async function parseGitHubResponse(response) {
+async function parseJsonResponse(response) {
   const text = await response.text();
   const data = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
-    throw new Error(data.message ? `GitHub: ${data.message}` : `GitHub returned ${response.status}`);
+    throw new Error(data.message || `Progress API returned ${response.status}`);
   }
 
   return data;
@@ -650,19 +619,4 @@ function earliestDate(left, right) {
   if (!left) return right;
   if (!right) return left;
   return Date.parse(left) <= Date.parse(right) ? left : right;
-}
-
-function toBase64(value) {
-  const bytes = new TextEncoder().encode(value);
-  let binary = '';
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary);
-}
-
-function fromBase64(value) {
-  const binary = atob(value.replace(/\s/g, ''));
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
 }
