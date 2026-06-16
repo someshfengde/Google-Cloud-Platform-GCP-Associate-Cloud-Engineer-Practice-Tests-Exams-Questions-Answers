@@ -3,13 +3,13 @@
   "profile": "somesh",
   "repository": "someshfengde/Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers",
   "branch": "main",
-  "exportedAt": "2026-06-16T16:44:42.304Z",
+  "exportedAt": "2026-06-16T16:46:31.777Z",
   "totals": {
     "totalQuestions": 179,
-    "answered": 6,
-    "correct": 6,
+    "answered": 10,
+    "correct": 10,
     "incorrect": 0,
-    "mistakes": 0,
+    "mistakes": 1,
     "flagged": 0,
     "scorePercent": 100
   },
@@ -62,12 +62,44 @@
         "mistakes": 0,
         "firstAnsweredAt": "2026-06-16T16:44:19.505Z",
         "lastAnsweredAt": "2026-06-16T16:44:19.505Z"
+      },
+      "q7": {
+        "selectedIndex": 0,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:45:20.623Z",
+        "lastAnsweredAt": "2026-06-16T16:45:20.623Z"
+      },
+      "q8": {
+        "selectedIndex": 0,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:45:40.055Z",
+        "lastAnsweredAt": "2026-06-16T16:45:40.055Z"
+      },
+      "q9": {
+        "selectedIndex": 1,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:45:55.189Z",
+        "lastAnsweredAt": "2026-06-16T16:45:55.189Z"
+      },
+      "q10": {
+        "selectedIndex": 2,
+        "correct": true,
+        "attempts": 2,
+        "mistakes": 1,
+        "firstAnsweredAt": "2026-06-16T16:46:13.405Z",
+        "lastAnsweredAt": "2026-06-16T16:46:16.022Z"
       }
     },
     "flags": {},
     "meta": {
       "appVersion": "2.0.0",
-      "updatedAt": "2026-06-16T16:44:42.304Z"
+      "updatedAt": "2026-06-16T16:46:31.777Z"
     }
   }
 }
