@@ -3,15 +3,15 @@
   "profile": "somesh",
   "repository": "someshfengde/Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers",
   "branch": "main",
-  "exportedAt": "2026-06-16T16:56:33.991Z",
+  "exportedAt": "2026-06-16T16:57:33.911Z",
   "totals": {
     "totalQuestions": 179,
-    "answered": 18,
+    "answered": 19,
     "correct": 18,
-    "incorrect": 0,
-    "mistakes": 2,
+    "incorrect": 1,
+    "mistakes": 4,
     "flagged": 0,
-    "scorePercent": 100
+    "scorePercent": 95
   },
   "progress": {
     "answers": {
@@ -158,12 +158,20 @@
         "mistakes": 0,
         "firstAnsweredAt": "2026-06-16T16:56:26.510Z",
         "lastAnsweredAt": "2026-06-16T16:56:26.510Z"
+      },
+      "q122": {
+        "selectedIndex": 3,
+        "correct": false,
+        "attempts": 3,
+        "mistakes": 2,
+        "firstAnsweredAt": "2026-06-16T16:57:19.261Z",
+        "lastAnsweredAt": "2026-06-16T16:57:27.961Z"
       }
     },
     "flags": {},
     "meta": {
       "appVersion": "2.0.0",
-      "updatedAt": "2026-06-16T16:56:33.991Z"
+      "updatedAt": "2026-06-16T16:57:33.911Z"
     }
   }
 }
