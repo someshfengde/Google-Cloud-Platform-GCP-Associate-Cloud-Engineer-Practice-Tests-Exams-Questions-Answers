@@ -91,11 +91,13 @@ Yes, we have a little commission from that link. Therefore, by using that link, 
 
 ## 🚀 Quick Web Practice App
 
-This repository now includes a lightweight static quiz app for GitHub Pages. It loads the MCQs directly from this README, shows one-click answer feedback, and saves correct/incorrect progress plus flagged questions in your browser.
+This repository now includes a lightweight static quiz app for GitHub Pages. It loads the MCQs directly from this README, hides the marked answers until you choose, and tracks attempts/mistakes/flags while the page is open.
 
-- Open `index.html` locally through a simple web server, or enable GitHub Pages for the repository branch.
+- Open `index.html` locally through a simple web server, or use the GitHub Pages deployment for this repository.
+- Live app: https://someshfengde.github.io/Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers/
 - No build step or backend is required; the app uses standard HTML, CSS, and JavaScript.
-- Progress is stored in browser `localStorage`, so it stays private to your device and browser profile.
+- GitHub is the persistent storage: use Load to read `progress/<profile>.json`, and Save to commit your latest progress back to that file.
+- Save requires a GitHub token with Contents read/write access for this public repository. Do not commit tokens; the app only reads the token from your browser field.
 
 ## 🙋‍♀️ & 🙋‍♂️ Contribution
 

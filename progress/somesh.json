@@ -1,0 +1,24 @@
+{
+  "schema": "gcp-ace-practice-progress-v1",
+  "profile": "somesh",
+  "repository": "someshfengde/Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers",
+  "branch": "main",
+  "exportedAt": null,
+  "totals": {
+    "totalQuestions": 179,
+    "answered": 0,
+    "correct": 0,
+    "incorrect": 0,
+    "mistakes": 0,
+    "flagged": 0,
+    "scorePercent": 0
+  },
+  "progress": {
+    "answers": {},
+    "flags": {},
+    "meta": {
+      "appVersion": "2.0.0",
+      "updatedAt": null
+    }
+  }
+}

@@ -3,21 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GCP ACE Practice Progress Tracker</title>
-    <meta name="description" content="Fast GitHub Pages quiz app for tracking GCP ACE practice question progress from this repository's README." />
+    <title>GCP ACE Practice</title>
+    <meta name="description" content="Static GitHub Pages MCQ practice app for GCP Associate Cloud Engineer questions." />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="hero">
+    <header class="topbar">
       <div>
         <p class="eyebrow">GCP Associate Cloud Engineer</p>
-        <h1>Practice Progress Tracker</h1>
-        <p class="subtitle">Answer the README MCQs, see instant correct/incorrect feedback, and keep progress in this browser.</p>
+        <h1>Practice</h1>
       </div>
-      <div class="hero-actions">
-        <a class="button secondary" href="README.md">View source questions</a>
-        <button id="resetProgress" class="button danger" type="button">Reset progress</button>
-      </div>
+      <nav class="topbar-actions" aria-label="App actions">
+        <a class="button secondary" href="README.md">README</a>
+        <button id="resetProgress" class="button danger" type="button">Reset</button>
+      </nav>
     </header>
 
     <main class="app-shell">
@@ -25,39 +24,72 @@
         <article><span id="totalQuestions">0</span><small>Total</small></article>
         <article><span id="answeredQuestions">0</span><small>Answered</small></article>
         <article><span id="correctQuestions">0</span><small>Correct</small></article>
+        <article><span id="mistakeCount">0</span><small>Mistakes</small></article>
         <article><span id="scorePercent">0%</span><small>Score</small></article>
       </section>
 
-      <section class="toolbar" aria-label="Quiz controls">
-        <label>
-          Search
-          <input id="searchInput" type="search" placeholder="Search questions or answers" />
-        </label>
-        <label>
-          Show
-          <select id="filterSelect">
-            <option value="all">All questions</option>
-            <option value="unanswered">Unanswered</option>
-            <option value="correct">Correct</option>
-            <option value="incorrect">Incorrect</option>
-            <option value="flagged">Flagged</option>
-          </select>
-        </label>
-        <button id="shuffleButton" class="button" type="button">Shuffle</button>
-        <button id="nextUnanswered" class="button" type="button">Next unanswered</button>
+      <section class="control-surface" aria-label="Practice controls">
+        <div class="toolbar">
+          <label>
+            Search
+            <input id="searchInput" type="search" placeholder="Question or answer text" autocomplete="off" />
+          </label>
+          <label>
+            View
+            <select id="filterSelect">
+              <option value="all">All questions</option>
+              <option value="unanswered">Unanswered</option>
+              <option value="correct">Correct now</option>
+              <option value="incorrect">Incorrect now</option>
+              <option value="needs-review">Needs review</option>
+              <option value="flagged">Flagged</option>
+            </select>
+          </label>
+          <button id="shuffleButton" class="button" type="button">Shuffle</button>
+          <button id="nextUnanswered" class="button" type="button">Next unanswered</button>
+        </div>
+
+        <section class="sync-panel" aria-label="Progress sync">
+          <div class="sync-heading">
+            <div>
+              <h2>GitHub Progress</h2>
+              <p id="syncPathPreview" class="sync-path">progress/default.json</p>
+            </div>
+            <span id="syncBadge" class="sync-badge">Unsaved</span>
+          </div>
+          <div class="sync-grid">
+            <label>
+              Profile
+              <input id="syncProfile" type="text" autocomplete="username" />
+            </label>
+            <label class="token-field">
+              GitHub token
+              <input id="syncToken" type="password" autocomplete="off" placeholder="Contents read/write" />
+            </label>
+          </div>
+          <div class="sync-actions">
+            <button id="loadProgress" class="button secondary-dark" type="button">Load</button>
+            <button id="saveProgress" class="button" type="button">Save</button>
+          </div>
+          <p id="syncStatus" class="sync-status" role="status">GitHub is the persistent storage.</p>
+        </section>
       </section>
 
-      <section id="statusMessage" class="status" role="status">Loading questions from README.md…</section>
+      <section id="statusMessage" class="status" role="status">Loading questions from README.md...</section>
       <section id="questionList" class="question-list" aria-live="polite"></section>
     </main>
 
     <template id="questionTemplate">
       <article class="card">
         <div class="card-header">
-          <span class="question-number"></span>
-          <button class="flag-button" type="button" aria-pressed="false">☆ Flag</button>
+          <div>
+            <span class="question-number"></span>
+            <span class="question-state"></span>
+          </div>
+          <button class="flag-button" type="button" aria-pressed="false">Flag</button>
         </div>
         <h2 class="question-text"></h2>
+        <div class="question-media"></div>
         <div class="options"></div>
         <p class="feedback" aria-live="polite"></p>
       </article>

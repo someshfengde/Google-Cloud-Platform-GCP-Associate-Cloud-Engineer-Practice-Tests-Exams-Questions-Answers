@@ -1,11 +1,19 @@
-const STORAGE_KEY = 'gcp-ace-progress-v1';
+const APP_VERSION = '2.0.0';
+
+const DEFAULT_REPO = {
+  owner: 'someshfengde',
+  repo: 'Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers',
+  branch: 'main',
+};
 
 const state = {
   questions: [],
-  progress: loadProgress(),
+  progress: createEmptyProgress(),
+  syncSettings: loadSyncSettings(),
   filter: 'all',
   search: '',
   shuffled: false,
+  shuffledIds: [],
 };
 
 const els = {
@@ -15,18 +23,29 @@ const els = {
   total: document.querySelector('#totalQuestions'),
   answered: document.querySelector('#answeredQuestions'),
   correct: document.querySelector('#correctQuestions'),
+  mistakes: document.querySelector('#mistakeCount'),
   score: document.querySelector('#scorePercent'),
   search: document.querySelector('#searchInput'),
   filter: document.querySelector('#filterSelect'),
   shuffle: document.querySelector('#shuffleButton'),
   next: document.querySelector('#nextUnanswered'),
   reset: document.querySelector('#resetProgress'),
+  syncProfile: document.querySelector('#syncProfile'),
+  syncToken: document.querySelector('#syncToken'),
+  syncPathPreview: document.querySelector('#syncPathPreview'),
+  syncBadge: document.querySelector('#syncBadge'),
+  syncStatus: document.querySelector('#syncStatus'),
+  load: document.querySelector('#loadProgress'),
+  save: document.querySelector('#saveProgress'),
 };
 
 init();
 
 async function init() {
   bindControls();
+  bindSyncControls();
+  hydrateSyncForm();
+
   try {
     const response = await fetch('README.md', { cache: 'no-cache' });
     if (!response.ok) throw new Error(`README.md returned ${response.status}`);
@@ -45,25 +64,51 @@ function bindControls() {
     state.search = event.target.value.trim().toLowerCase();
     render();
   });
+
   els.filter.addEventListener('change', (event) => {
     state.filter = event.target.value;
     render();
   });
+
   els.shuffle.addEventListener('click', () => {
     state.shuffled = !state.shuffled;
+    state.shuffledIds = state.shuffled ? shuffleIds(state.questions.map((question) => question.id)) : [];
     els.shuffle.textContent = state.shuffled ? 'Original order' : 'Shuffle';
     render();
   });
+
   els.next.addEventListener('click', () => {
-    const next = state.questions.find((question) => !state.progress.answers[question.id]);
-    if (next) document.querySelector(`[data-question-id="${next.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const next = state.questions.find((question) => !getAnswer(question.id));
+    if (!next) {
+      setSyncStatus('All questions have an answer.', 'synced');
+      return;
+    }
+    scrollToQuestion(next.id);
   });
+
   els.reset.addEventListener('click', () => {
-    if (!confirm('Reset all saved answers and flags for this browser?')) return;
-    state.progress = { answers: {}, flags: {} };
-    saveProgress();
+    if (!confirm('Clear the progress currently loaded on this page? Save afterward if you want GitHub to store the reset.')) return;
+    state.progress = createEmptyProgress();
+    touchProgress();
     render();
+    setSyncStatus('Progress cleared on this page. Save to store the reset in GitHub.');
   });
+}
+
+function bindSyncControls() {
+  els.syncProfile.addEventListener('input', () => {
+    readSyncSettingsFromForm();
+    updateSyncPathPreview();
+  });
+
+  els.load.addEventListener('click', loadProgressFromGitHub);
+  els.save.addEventListener('click', saveProgressToGitHub);
+}
+
+function hydrateSyncForm() {
+  els.syncProfile.value = state.syncSettings.profile;
+  els.syncToken.value = '';
+  updateSyncPathPreview();
 }
 
 function parseQuestions(markdown) {
@@ -74,13 +119,26 @@ function parseQuestions(markdown) {
   for (const line of lines) {
     if (line.startsWith('### ')) {
       if (current?.options.length) questions.push(current);
-      current = { question: cleanMarkdown(line.replace(/^###\s+/, '')), options: [] };
+      current = {
+        question: cleanMarkdown(line.replace(/^###\s+/, '')),
+        media: [],
+        options: [],
+      };
       continue;
     }
 
-    const option = line.match(/^- \[( |x|X)\] (.+)$/);
+    const option = line.match(/^\s*-\s+\[( |x|X)\]\s+(.+)$/);
     if (current && option) {
-      current.options.push({ text: cleanMarkdown(option[2]), correct: option[1].toLowerCase() === 'x' });
+      current.options.push({
+        text: cleanMarkdown(option[2]),
+        correct: option[1].toLowerCase() === 'x',
+      });
+      continue;
+    }
+
+    const image = line.match(/!\[([^\]]*)\]\(([^)]+)\)/);
+    if (current && image) {
+      current.media.push({ alt: cleanMarkdown(image[1]) || 'Question image', src: image[2].trim() });
       continue;
     }
 
@@ -89,12 +147,14 @@ function parseQuestions(markdown) {
       current = null;
     }
   }
+
   if (current?.options.length) questions.push(current);
 
   return questions.map((question, index) => ({
     ...question,
     id: `q${index + 1}`,
     number: index + 1,
+    slug: slugify(question.question),
   }));
 }
 
@@ -105,6 +165,7 @@ function cleanMarkdown(value) {
     .replace(/`([^`]+)`/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -112,27 +173,43 @@ function render() {
   updateStats();
   els.list.replaceChildren();
 
+  const visibleQuestions = getVisibleQuestions();
   const fragment = document.createDocumentFragment();
-  getVisibleQuestions().forEach((question) => fragment.appendChild(renderQuestion(question)));
+  visibleQuestions.forEach((question) => fragment.appendChild(renderQuestion(question)));
   els.list.appendChild(fragment);
-  els.status.hidden = els.list.children.length > 0;
+
+  els.status.hidden = visibleQuestions.length > 0;
   if (!els.status.hidden) els.status.textContent = 'No questions match the current filters.';
 }
 
 function renderQuestion(question) {
   const node = els.template.content.firstElementChild.cloneNode(true);
-  const answer = state.progress.answers[question.id];
+  const answer = getAnswer(question.id);
   const flagged = Boolean(state.progress.flags[question.id]);
+  const status = getQuestionStatus(answer);
+
   node.dataset.questionId = question.id;
+  node.dataset.status = status;
   node.querySelector('.question-number').textContent = `Question ${question.number}`;
+  node.querySelector('.question-state').textContent = answer ? getAnswerSummary(answer) : 'Unanswered';
   node.querySelector('.question-text').textContent = question.question;
+
+  const media = node.querySelector('.question-media');
+  question.media.forEach((item) => {
+    const image = document.createElement('img');
+    image.src = item.src;
+    image.alt = item.alt;
+    image.loading = 'lazy';
+    media.appendChild(image);
+  });
 
   const flagButton = node.querySelector('.flag-button');
   flagButton.setAttribute('aria-pressed', String(flagged));
-  flagButton.textContent = flagged ? '★ Flagged' : '☆ Flag';
+  flagButton.textContent = flagged ? 'Flagged' : 'Flag';
   flagButton.addEventListener('click', () => {
     state.progress.flags[question.id] = !state.progress.flags[question.id];
-    saveProgress();
+    if (!state.progress.flags[question.id]) delete state.progress.flags[question.id];
+    touchProgress();
     render();
   });
 
@@ -142,62 +219,450 @@ function renderQuestion(question) {
     button.type = 'button';
     button.className = 'option';
     button.textContent = `${String.fromCharCode(65 + index)}. ${option.text}`;
+    button.setAttribute('aria-pressed', String(answer?.selectedIndex === index));
+
     if (answer) {
-      if (option.correct) button.classList.add(answer.index === index ? 'correct' : 'missed');
-      if (answer.index === index && !option.correct) button.classList.add('incorrect');
+      if (answer.selectedIndex === index) button.classList.add('selected', option.correct ? 'correct' : 'incorrect');
+      if (option.correct && answer.selectedIndex !== index) button.classList.add('missed');
     }
+
     button.addEventListener('click', () => chooseAnswer(question, index));
     options.appendChild(button);
   });
 
   const feedback = node.querySelector('.feedback');
   if (answer) {
-    feedback.textContent = answer.correct ? 'Correct' : 'Incorrect — the correct answer is highlighted.';
+    feedback.textContent = answer.correct
+      ? `Correct. Attempts: ${answer.attempts}.`
+      : `Incorrect. Correct answer is highlighted. Attempts: ${answer.attempts}.`;
     feedback.classList.add(answer.correct ? 'correct' : 'incorrect');
   }
+
   return node;
 }
 
 function chooseAnswer(question, index) {
   const selected = question.options[index];
-  state.progress.answers[question.id] = { index, correct: selected.correct, answeredAt: new Date().toISOString() };
-  saveProgress();
+  const previous = getAnswer(question.id);
+  const now = new Date().toISOString();
+  const attempts = (previous?.attempts || 0) + 1;
+  const mistakes = (previous?.mistakes || 0) + (selected.correct ? 0 : 1);
+
+  state.progress.answers[question.id] = {
+    selectedIndex: index,
+    correct: selected.correct,
+    attempts,
+    mistakes,
+    firstAnsweredAt: previous?.firstAnsweredAt || now,
+    lastAnsweredAt: now,
+  };
+
+  touchProgress();
   render();
-  document.querySelector(`[data-question-id="${question.id}"]`)?.scrollIntoView({ block: 'center' });
+  scrollToQuestion(question.id, false);
+  setSyncStatus('Unsaved changes. Save to store them in GitHub.');
 }
 
 function getVisibleQuestions() {
   const filtered = state.questions.filter((question) => {
-    const answer = state.progress.answers[question.id];
+    const answer = getAnswer(question.id);
     const flagged = state.progress.flags[question.id];
-    const matchesSearch = !state.search || [question.question, ...question.options.map((option) => option.text)].join(' ').toLowerCase().includes(state.search);
+    const searchable = [question.question, ...question.options.map((option) => option.text)].join(' ').toLowerCase();
+    const matchesSearch = !state.search || searchable.includes(state.search);
     const matchesFilter = state.filter === 'all'
       || (state.filter === 'unanswered' && !answer)
       || (state.filter === 'correct' && answer?.correct)
       || (state.filter === 'incorrect' && answer && !answer.correct)
+      || (state.filter === 'needs-review' && answer?.mistakes > 0)
       || (state.filter === 'flagged' && flagged);
     return matchesSearch && matchesFilter;
   });
-  return state.shuffled ? [...filtered].sort(() => Math.random() - 0.5) : filtered;
+
+  if (!state.shuffled) return filtered;
+  const order = new Map(state.shuffledIds.map((id, index) => [id, index]));
+  return [...filtered].sort((a, b) => (order.get(a.id) || 0) - (order.get(b.id) || 0));
 }
 
 function updateStats() {
   const answers = Object.values(state.progress.answers);
+  const answered = answers.length;
   const correct = answers.filter((answer) => answer.correct).length;
+  const mistakes = answers.reduce((sum, answer) => sum + (answer.mistakes || 0), 0);
+
   els.total.textContent = state.questions.length;
-  els.answered.textContent = answers.length;
+  els.answered.textContent = answered;
   els.correct.textContent = correct;
-  els.score.textContent = answers.length ? `${Math.round((correct / answers.length) * 100)}%` : '0%';
+  els.mistakes.textContent = mistakes;
+  els.score.textContent = answered ? `${Math.round((correct / answered) * 100)}%` : '0%';
 }
 
-function loadProgress() {
+function getAnswer(questionId) {
+  return state.progress.answers[questionId];
+}
+
+function getQuestionStatus(answer) {
+  if (!answer) return 'unanswered';
+  return answer.correct ? 'correct' : 'incorrect';
+}
+
+function getAnswerSummary(answer) {
+  const mistakes = answer.mistakes ? `, ${answer.mistakes} wrong` : '';
+  return `${answer.correct ? 'Correct' : 'Incorrect'} (${answer.attempts} attempt${answer.attempts === 1 ? '' : 's'}${mistakes})`;
+}
+
+function scrollToQuestion(questionId, clearFilters = true) {
+  if (clearFilters && !document.querySelector(`[data-question-id="${questionId}"]`)) {
+    state.filter = 'all';
+    state.search = '';
+    els.filter.value = 'all';
+    els.search.value = '';
+    render();
+  }
+
+  document.querySelector(`[data-question-id="${questionId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function touchProgress() {
+  state.progress.meta = {
+    ...state.progress.meta,
+    appVersion: APP_VERSION,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function createEmptyProgress() {
+  return {
+    answers: {},
+    flags: {},
+    meta: {
+      appVersion: APP_VERSION,
+      updatedAt: null,
+    },
+  };
+}
+
+function normalizeProgress(input) {
+  const source = input?.progress || input || {};
+  const normalized = createEmptyProgress();
+
+  Object.entries(source.answers || {}).forEach(([id, answer]) => {
+    const selectedIndex = Number.isInteger(answer.selectedIndex) ? answer.selectedIndex : answer.index;
+    if (!Number.isInteger(selectedIndex)) return;
+    const correct = Boolean(answer.correct);
+    const answeredAt = answer.lastAnsweredAt || answer.answeredAt || answer.firstAnsweredAt || new Date().toISOString();
+
+    normalized.answers[id] = {
+      selectedIndex,
+      correct,
+      attempts: Math.max(1, Number(answer.attempts) || 1),
+      mistakes: Math.max(0, Number(answer.mistakes) || (correct ? 0 : 1)),
+      firstAnsweredAt: answer.firstAnsweredAt || answer.answeredAt || answeredAt,
+      lastAnsweredAt: answeredAt,
+    };
+  });
+
+  Object.entries(source.flags || {}).forEach(([id, flagged]) => {
+    if (flagged) normalized.flags[id] = true;
+  });
+
+  normalized.meta = {
+    ...normalized.meta,
+    ...(source.meta || {}),
+    appVersion: APP_VERSION,
+  };
+
+  return normalized;
+}
+
+function loadSyncSettings() {
+  const inferred = inferRepoFromLocation();
+  return {
+    profile: 'somesh',
+    owner: inferred.owner,
+    repo: inferred.repo,
+    branch: inferred.branch,
+  };
+}
+
+function inferRepoFromLocation() {
+  const host = window.location.hostname;
+  const pathRepo = window.location.pathname.split('/').filter(Boolean)[0];
+
+  if (host.endsWith('.github.io')) {
+    const owner = host.replace('.github.io', '');
+    return {
+      owner,
+      repo: pathRepo || `${owner}.github.io`,
+      branch: DEFAULT_REPO.branch,
+    };
+  }
+
+  return { ...DEFAULT_REPO };
+}
+
+function readSyncSettingsFromForm() {
+  state.syncSettings = {
+    ...state.syncSettings,
+    profile: els.syncProfile.value.trim() || 'somesh',
+  };
+}
+
+function getSyncConfig() {
+  readSyncSettingsFromForm();
+  return {
+    ...state.syncSettings,
+    token: els.syncToken.value.trim(),
+    path: `progress/${sanitizeProfile(state.syncSettings.profile)}.json`,
+  };
+}
+
+function updateSyncPathPreview() {
+  const profile = sanitizeProfile(els.syncProfile.value.trim() || 'default');
+  els.syncPathPreview.textContent = `progress/${profile}.json`;
+}
+
+async function loadProgressFromGitHub() {
+  const config = getSyncConfig();
+  if (!validateSyncConfig(config, { requireToken: false })) return;
+
+  setSyncStatus('Loading progress from GitHub...');
+  setSyncBusy(true);
+
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { answers: {}, flags: {} };
-  } catch {
-    return { answers: {}, flags: {} };
+    const remote = await getGitHubProgressFile(config);
+    if (!remote) {
+      setSyncStatus(`No progress file found at ${config.path}.`, 'error');
+      return;
+    }
+
+    state.progress = mergeProgress(state.progress, remote.progress);
+    touchProgress();
+    render();
+    setSyncStatus(`Loaded and merged ${config.path}.`, 'synced');
+  } catch (error) {
+    setSyncStatus(error.message, 'error');
+  } finally {
+    setSyncBusy(false);
   }
 }
 
-function saveProgress() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress));
+async function saveProgressToGitHub() {
+  const config = getSyncConfig();
+  if (!validateSyncConfig(config, { requireToken: true })) return;
+
+  setSyncStatus('Saving progress to GitHub...');
+  setSyncBusy(true);
+
+  try {
+    const existing = await getGitHubProgressFile(config);
+    const merged = existing ? mergeProgress(existing.progress, state.progress) : normalizeProgress(state.progress);
+    state.progress = merged;
+    touchProgress();
+
+    const payload = createProgressPayload(config, merged);
+    await putGitHubProgressFile(config, payload, existing?.sha);
+    render();
+    setSyncStatus(`Saved ${config.path} to GitHub.`, 'synced');
+  } catch (error) {
+    setSyncStatus(error.message, 'error');
+  } finally {
+    setSyncBusy(false);
+  }
+}
+
+function validateSyncConfig(config, { requireToken }) {
+  if (!config.owner || !config.repo || !config.branch) {
+    setSyncStatus('Owner, repo, and branch are required.', 'error');
+    return false;
+  }
+  if (requireToken && !config.token) {
+    setSyncStatus('A GitHub token with Contents read/write access is required to save.', 'error');
+    return false;
+  }
+  return true;
+}
+
+async function getGitHubProgressFile(config) {
+  const url = githubContentsUrl(config);
+  const response = await fetch(`${url}?ref=${encodeURIComponent(config.branch)}`, {
+    headers: githubHeaders(config.token),
+  });
+
+  if (response.status === 404) return null;
+  const data = await parseGitHubResponse(response);
+  const decoded = fromBase64(data.content || '');
+  const payload = JSON.parse(decoded);
+  return {
+    sha: data.sha,
+    progress: normalizeProgress(payload.progress || payload),
+  };
+}
+
+async function putGitHubProgressFile(config, payload, sha) {
+  const body = {
+    message: `Update ${config.profile} quiz progress`,
+    branch: config.branch,
+    content: toBase64(JSON.stringify(payload, null, 2)),
+  };
+
+  if (sha) body.sha = sha;
+
+  const response = await fetch(githubContentsUrl(config), {
+    method: 'PUT',
+    headers: githubHeaders(config.token),
+    body: JSON.stringify(body),
+  });
+
+  await parseGitHubResponse(response);
+}
+
+function githubContentsUrl(config) {
+  const path = config.path.split('/').map(encodeURIComponent).join('/');
+  return `https://api.github.com/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}/contents/${path}`;
+}
+
+function githubHeaders(token) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+async function parseGitHubResponse(response) {
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+
+  if (!response.ok) {
+    throw new Error(data.message ? `GitHub: ${data.message}` : `GitHub returned ${response.status}`);
+  }
+
+  return data;
+}
+
+function createProgressPayload(config, progress) {
+  return {
+    schema: 'gcp-ace-practice-progress-v1',
+    profile: config.profile,
+    repository: `${config.owner}/${config.repo}`,
+    branch: config.branch,
+    exportedAt: new Date().toISOString(),
+    totals: calculateTotals(progress),
+    progress,
+  };
+}
+
+function mergeProgress(base, incoming) {
+  const merged = normalizeProgress(base);
+  const other = normalizeProgress(incoming);
+
+  Object.entries(other.answers).forEach(([id, incomingAnswer]) => {
+    const current = merged.answers[id];
+    if (!current) {
+      merged.answers[id] = incomingAnswer;
+      return;
+    }
+
+    const currentTime = Date.parse(current.lastAnsweredAt || '') || 0;
+    const incomingTime = Date.parse(incomingAnswer.lastAnsweredAt || '') || 0;
+    const winner = incomingTime >= currentTime ? incomingAnswer : current;
+
+    merged.answers[id] = {
+      ...winner,
+      attempts: Math.max(current.attempts || 1, incomingAnswer.attempts || 1),
+      mistakes: Math.max(current.mistakes || 0, incomingAnswer.mistakes || 0),
+      firstAnsweredAt: earliestDate(current.firstAnsweredAt, incomingAnswer.firstAnsweredAt),
+    };
+  });
+
+  Object.entries(other.flags).forEach(([id, flagged]) => {
+    if (flagged) merged.flags[id] = true;
+  });
+
+  merged.meta = {
+    ...merged.meta,
+    updatedAt: new Date().toISOString(),
+    appVersion: APP_VERSION,
+  };
+
+  return merged;
+}
+
+function calculateTotals(progress = state.progress) {
+  const normalized = normalizeProgress(progress);
+  const answers = Object.values(normalized.answers);
+  const answered = answers.length;
+  const correct = answers.filter((answer) => answer.correct).length;
+  const mistakes = answers.reduce((sum, answer) => sum + (answer.mistakes || 0), 0);
+
+  return {
+    totalQuestions: state.questions.length,
+    answered,
+    correct,
+    incorrect: answered - correct,
+    mistakes,
+    flagged: Object.keys(normalized.flags).length,
+    scorePercent: answered ? Math.round((correct / answered) * 100) : 0,
+  };
+}
+
+function setSyncBusy(isBusy) {
+  [els.load, els.save].forEach((control) => {
+    control.disabled = isBusy;
+  });
+}
+
+function setSyncStatus(message, tone = 'pending') {
+  els.syncStatus.textContent = message;
+  els.syncBadge.classList.toggle('synced', tone === 'synced');
+  els.syncBadge.classList.toggle('error', tone === 'error');
+  els.syncBadge.textContent = tone === 'synced' ? 'Saved' : tone === 'error' ? 'Check' : 'Unsaved';
+}
+
+function sanitizeProfile(value) {
+  return (value || 'default')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64) || 'default';
+}
+
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+function shuffleIds(ids) {
+  const shuffled = [...ids];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function earliestDate(left, right) {
+  if (!left) return right;
+  if (!right) return left;
+  return Date.parse(left) <= Date.parse(right) ? left : right;
+}
+
+function toBase64(value) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}
+
+function fromBase64(value) {
+  const binary = atob(value.replace(/\s/g, ''));
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
 }
