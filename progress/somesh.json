@@ -3,22 +3,71 @@
   "profile": "somesh",
   "repository": "someshfengde/Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers",
   "branch": "main",
-  "exportedAt": "2026-06-16T16:40:47.280Z",
+  "exportedAt": "2026-06-16T16:44:42.304Z",
   "totals": {
     "totalQuestions": 179,
-    "answered": 0,
-    "correct": 0,
+    "answered": 6,
+    "correct": 6,
     "incorrect": 0,
     "mistakes": 0,
     "flagged": 0,
-    "scorePercent": 0
+    "scorePercent": 100
   },
   "progress": {
-    "answers": {},
+    "answers": {
+      "q1": {
+        "selectedIndex": 3,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:42:43.105Z",
+        "lastAnsweredAt": "2026-06-16T16:42:43.105Z"
+      },
+      "q2": {
+        "selectedIndex": 1,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:43:03.905Z",
+        "lastAnsweredAt": "2026-06-16T16:43:03.905Z"
+      },
+      "q3": {
+        "selectedIndex": 3,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:43:45.138Z",
+        "lastAnsweredAt": "2026-06-16T16:43:45.138Z"
+      },
+      "q4": {
+        "selectedIndex": 0,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:43:57.154Z",
+        "lastAnsweredAt": "2026-06-16T16:43:57.154Z"
+      },
+      "q5": {
+        "selectedIndex": 1,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:44:04.405Z",
+        "lastAnsweredAt": "2026-06-16T16:44:04.405Z"
+      },
+      "q6": {
+        "selectedIndex": 1,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-16T16:44:19.505Z",
+        "lastAnsweredAt": "2026-06-16T16:44:19.505Z"
+      }
+    },
     "flags": {},
     "meta": {
       "appVersion": "2.0.0",
-      "updatedAt": "2026-06-16T16:40:47.280Z"
+      "updatedAt": "2026-06-16T16:44:42.304Z"
     }
   }
 }
