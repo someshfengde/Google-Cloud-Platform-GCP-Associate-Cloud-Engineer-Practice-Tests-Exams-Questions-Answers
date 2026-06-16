@@ -88,6 +88,15 @@ Yes, we have a little commission from that link. Therefore, by using that link, 
 
 - AI-generated explanations (only paid [Udemy](https://www.udemy.com/course/gcp-associate-cloud-engineer-ace-practice-tests-exams/?referralCode=534254458B74E5C1839B)).
 
+
+## 🚀 Quick Web Practice App
+
+This repository now includes a lightweight static quiz app for GitHub Pages. It loads the MCQs directly from this README, shows one-click answer feedback, and saves correct/incorrect progress plus flagged questions in your browser.
+
+- Open `index.html` locally through a simple web server, or enable GitHub Pages for the repository branch.
+- No build step or backend is required; the app uses standard HTML, CSS, and JavaScript.
+- Progress is stored in browser `localStorage`, so it stays private to your device and browser profile.
+
 ## 🙋‍♀️ & 🙋‍♂️ Contribution
 
 We are so thankful for every contribution, which makes sure we can deliver top-notch content. Whenever you find a missing resource, broken link in a [Table of Contents](#table-of-contents), the wrong answer, please submit an [issue](../../issues). Even better would be a [Pull Request (PR)](../../pulls).

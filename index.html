@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GCP ACE Practice Progress Tracker</title>
+    <meta name="description" content="Fast GitHub Pages quiz app for tracking GCP ACE practice question progress from this repository's README." />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">GCP Associate Cloud Engineer</p>
+        <h1>Practice Progress Tracker</h1>
+        <p class="subtitle">Answer the README MCQs, see instant correct/incorrect feedback, and keep progress in this browser.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="button secondary" href="README.md">View source questions</a>
+        <button id="resetProgress" class="button danger" type="button">Reset progress</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="stats" aria-label="Progress summary">
+        <article><span id="totalQuestions">0</span><small>Total</small></article>
+        <article><span id="answeredQuestions">0</span><small>Answered</small></article>
+        <article><span id="correctQuestions">0</span><small>Correct</small></article>
+        <article><span id="scorePercent">0%</span><small>Score</small></article>
+      </section>
+
+      <section class="toolbar" aria-label="Quiz controls">
+        <label>
+          Search
+          <input id="searchInput" type="search" placeholder="Search questions or answers" />
+        </label>
+        <label>
+          Show
+          <select id="filterSelect">
+            <option value="all">All questions</option>
+            <option value="unanswered">Unanswered</option>
+            <option value="correct">Correct</option>
+            <option value="incorrect">Incorrect</option>
+            <option value="flagged">Flagged</option>
+          </select>
+        </label>
+        <button id="shuffleButton" class="button" type="button">Shuffle</button>
+        <button id="nextUnanswered" class="button" type="button">Next unanswered</button>
+      </section>
+
+      <section id="statusMessage" class="status" role="status">Loading questions from README.md…</section>
+      <section id="questionList" class="question-list" aria-live="polite"></section>
+    </main>
+
+    <template id="questionTemplate">
+      <article class="card">
+        <div class="card-header">
+          <span class="question-number"></span>
+          <button class="flag-button" type="button" aria-pressed="false">☆ Flag</button>
+        </div>
+        <h2 class="question-text"></h2>
+        <div class="options"></div>
+        <p class="feedback" aria-live="polite"></p>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
