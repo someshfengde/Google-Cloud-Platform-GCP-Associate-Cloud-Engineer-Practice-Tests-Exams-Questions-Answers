@@ -3,15 +3,15 @@
   "profile": "somesh",
   "repository": "someshfengde/Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers",
   "branch": "main",
-  "exportedAt": "2026-06-17T08:05:57.078Z",
+  "exportedAt": "2026-06-17T08:06:57.334Z",
   "totals": {
     "totalQuestions": 179,
-    "answered": 110,
-    "correct": 98,
-    "incorrect": 12,
-    "mistakes": 25,
+    "answered": 112,
+    "correct": 99,
+    "incorrect": 13,
+    "mistakes": 26,
     "flagged": 1,
-    "scorePercent": 89
+    "scorePercent": 88
   },
   "progress": {
     "answers": {
@@ -894,6 +894,22 @@
         "mistakes": 0,
         "firstAnsweredAt": "2026-06-17T08:05:30.325Z",
         "lastAnsweredAt": "2026-06-17T08:05:30.325Z"
+      },
+      "q105": {
+        "selectedIndex": 0,
+        "correct": false,
+        "attempts": 1,
+        "mistakes": 1,
+        "firstAnsweredAt": "2026-06-17T08:06:14.596Z",
+        "lastAnsweredAt": "2026-06-17T08:06:14.596Z"
+      },
+      "q106": {
+        "selectedIndex": 3,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-17T08:06:44.536Z",
+        "lastAnsweredAt": "2026-06-17T08:06:44.536Z"
       }
     },
     "flags": {
@@ -901,7 +917,7 @@
     },
     "meta": {
       "appVersion": "2.0.0",
-      "updatedAt": "2026-06-17T08:05:57.078Z"
+      "updatedAt": "2026-06-17T08:06:57.334Z"
     }
   }
 }
