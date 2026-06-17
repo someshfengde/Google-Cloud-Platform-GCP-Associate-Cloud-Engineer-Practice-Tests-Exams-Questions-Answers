@@ -3,13 +3,13 @@
   "profile": "somesh",
   "repository": "someshfengde/Google-Cloud-Platform-GCP-Associate-Cloud-Engineer-Practice-Tests-Exams-Questions-Answers",
   "branch": "main",
-  "exportedAt": "2026-06-17T09:04:57.078Z",
+  "exportedAt": "2026-06-17T09:05:57.578Z",
   "totals": {
     "totalQuestions": 179,
-    "answered": 153,
-    "correct": 130,
-    "incorrect": 23,
-    "mistakes": 38,
+    "answered": 158,
+    "correct": 134,
+    "incorrect": 24,
+    "mistakes": 39,
     "flagged": 2,
     "scorePercent": 85
   },
@@ -1238,6 +1238,46 @@
         "mistakes": 0,
         "firstAnsweredAt": "2026-06-17T09:04:17.354Z",
         "lastAnsweredAt": "2026-06-17T09:04:17.354Z"
+      },
+      "q152": {
+        "selectedIndex": 1,
+        "correct": false,
+        "attempts": 1,
+        "mistakes": 1,
+        "firstAnsweredAt": "2026-06-17T09:04:56.617Z",
+        "lastAnsweredAt": "2026-06-17T09:04:56.617Z"
+      },
+      "q153": {
+        "selectedIndex": 1,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-17T09:05:08.228Z",
+        "lastAnsweredAt": "2026-06-17T09:05:08.228Z"
+      },
+      "q155": {
+        "selectedIndex": 3,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-17T09:05:23.093Z",
+        "lastAnsweredAt": "2026-06-17T09:05:23.093Z"
+      },
+      "q157": {
+        "selectedIndex": 1,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-17T09:05:36.538Z",
+        "lastAnsweredAt": "2026-06-17T09:05:36.538Z"
+      },
+      "q160": {
+        "selectedIndex": 0,
+        "correct": true,
+        "attempts": 1,
+        "mistakes": 0,
+        "firstAnsweredAt": "2026-06-17T09:05:54.769Z",
+        "lastAnsweredAt": "2026-06-17T09:05:54.769Z"
       }
     },
     "flags": {
@@ -1246,7 +1286,7 @@
     },
     "meta": {
       "appVersion": "2.0.0",
-      "updatedAt": "2026-06-17T09:04:57.078Z"
+      "updatedAt": "2026-06-17T09:05:57.578Z"
     }
   }
 }
